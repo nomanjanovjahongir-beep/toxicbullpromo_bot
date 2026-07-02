@@ -107,50 +107,37 @@ async def get_or_create_user(update: Update, context: CallbackContext) -> Option
     
     is_member = True # <--- O'zingizning haqiqiy tekshiruv kodingizni shu yerga qo'ying!
 
-    async def check_subscription(update, context):
-    # 1. Telegramdan kelgan so'rovni olish
+   async def check_subscription(update, context):
     query = update.callback_query
     
-    # Agar so'rov bo'sh bo'lsa, xato bermasligi uchun to'xtatamiz
     if not query:
         return
 
-    # Tugma bosilgandagi aylanib turadigan yuklanish belgisini yo'qotish
     await query.answer()
     
     user_id = query.from_user.id
     chat_id = query.message.chat_id
     message_id = query.message.message_id
 
-    # ----------------------------------------------------------------
-    # DIQQAT: Bu yerda sizning kanallarni tekshiradigan kodingiz bo'lishi kerak.
-    # Agar sizda tayyor o'zgaruvchi bo'lsa, pastdagi 'is_member = True' o'rniga
-    # o'zingizning tekshirish mantiqingizni qo'ying.
-    # Masalan: is_member = await check_user_in_channels(user_id)
-    # ----------------------------------------------------------------
-    is_member = True  # <--- O'zingizning haqiqiy tekshiruv kodingizni shu qatorga yozing
+    # DIQQAT: Agar sizda kanallarni tekshiruvchi o'zgaruvchi nomi boshqacha bo'lsa,
+    # faqat shu pastdagi True so'zini o'zgartiring, qator boshidagi bo'shliqlarga tegmang!
+    is_member = True 
 
     if is_member:
-        # 2. Agar foydalanuvchi hamma kanalga a'zo bo'lgan bo'lsa
         try:
-            # Obuna bo'ling degan eski xabarni o'chirib tashlaymiz
             await context.bot.delete_message(
                 chat_id=chat_id,
                 message_id=message_id
             )
         except Exception as e:
-            # Agar xabar allaqachon o'chgan bo'lsa, bot to'xtab qolmaydi
-            print(f"Xabarni o'chirishda xatolik yuz berdi: {e}")
+            print(f"Xabarni o'chirishda xatolik: {e}")
 
-        # 3. Foydalanuvchiga muvaffaqiyatli o'tganini xabar qilamiz
         await context.bot.send_message(
             chat_id=user_id,
             text="✅ Rahmat! Hamma kanallarga obuna bo'ldingiz. Endi botdan to'liq foydalanishingiz mumkin."
         )
     else:
-        # 4. Agar hali hamma kanalga obuna bo'lmagan bo'lsa
         try:
-            # Ekran o'rtasida chiquvchi ogohlantirish oynasini ko'rsatamiz
             await query.answer(
                 text="❌ Siz hali hamma kanallarga obuna bo'lmagansiz! Iltimos, tekshirib qaytadan urinib ko'ring.",
                 show_alert=True
