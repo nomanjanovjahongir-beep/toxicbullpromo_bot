@@ -4,7 +4,7 @@ from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, 
 
 
 def get_main_keyboard():
-    """Asosiy tugmalar"""
+    """Asosiy tugmalar - oddiy foydalanuvchilar uchun"""
     buttons = [
         [KeyboardButton("👤 Profil"), KeyboardButton("🔗 Referral")],
         [KeyboardButton("💰 Promo"), KeyboardButton("🏆 Reyting")],
@@ -14,7 +14,7 @@ def get_main_keyboard():
 
 
 def get_admin_keyboard():
-    """Admin tugmalar"""
+    """Admin tugmalar - admin foydalanuvchi uchun"""
     buttons = [
         [KeyboardButton("📊 Statistika"), KeyboardButton("💰 Coin berish")],
         [KeyboardButton("📢 Xabar yuborish"), KeyboardButton("👥 Foydalanuvchilar")],
@@ -30,11 +30,12 @@ def get_back_keyboard():
 
 
 def get_promo_keyboard():
-    """Promo almashtirish tugmalari"""
+    """Promo almashtirish tugmalari - InlineKeyboardButton ko'rinishida"""
     from config import PROMO_PRICES
     
     keyboard = []
     
+    # Har bir promo uchun alohida tugma
     for promo_name in PROMO_PRICES.keys():
         keyboard.append([
             InlineKeyboardButton(
@@ -43,6 +44,7 @@ def get_promo_keyboard():
             )
         ])
     
+    # Orqaga tugmasi
     keyboard.append([
         InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")
     ])
@@ -51,7 +53,7 @@ def get_promo_keyboard():
 
 
 def get_referral_keyboard():
-    """Referral link uchun tugma"""
+    """Referral link uchun tugma - linkni nusxalash"""
     keyboard = [
         [InlineKeyboardButton("📋 Linkni nusxalash", callback_data="copy_referral_link")],
         [InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")]
@@ -60,7 +62,7 @@ def get_referral_keyboard():
 
 
 def get_referral_link_keyboard():
-    """Faqat referral linkni ko'rsatish uchun"""
+    """Faqat referral linkni ko'rsatish uchun - orqaga tugmasi bilan"""
     keyboard = [
         [InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")]
     ]
@@ -68,7 +70,7 @@ def get_referral_link_keyboard():
 
 
 def get_admin_coin_keyboard():
-    """Coin berish uchun tugmalar"""
+    """Coin berish/olish uchun admin tugmalar - InlineKeyboardButton ko'rinishida"""
     keyboard = [
         [InlineKeyboardButton("➕ 10 coin", callback_data="add_10")],
         [InlineKeyboardButton("➕ 50 coin", callback_data="add_50")],
