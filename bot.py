@@ -84,7 +84,6 @@ async def get_or_create_user(update: Update, context: CallbackContext) -> Option
 
 
 async def check_subscription(user_id: int, context: CallbackContext) -> bool:
-    """Foydalanuvchi barcha kanallarga obuna bo'lganligini tekshiradi"""
     if not REQUIRED_CHANNELS:
         return True
     
@@ -96,7 +95,6 @@ async def check_subscription(user_id: int, context: CallbackContext) -> bool:
                 user_id=user_id
             )
             if chat_member.status not in ['member', 'administrator', 'creator']:
-                logger.info(f"User {user_id} not subscribed to {channel_name}")
                 return False
         except Exception as e:
             logger.error(f"Error checking channel {channel_name}: {e}")
@@ -261,7 +259,6 @@ async def referral_handler(update: Update, context: CallbackContext):
             return
         
         referral_count = get_referral_count(user_id)
-        referral_link = f"https://t.me/{BOT_USERNAME}?start={user_id}"
         referral_text = f"🔗 <b>Referral tizimi</b>\n\n📊 Sizning referral soningiz: <b>{referral_count}</b>\n💰 Har bir referral uchun: <b>{REFERRAL_REWARD} coin</b>\n💰 Jami coin: <b>{db_user.get('coins', 0)}</b>\n\n📋 Referral linkni olish uchun tugmani bosing:"
         
         await update.message.reply_text(referral_text, parse_mode="HTML", reply_markup=get_referral_keyboard())
@@ -669,7 +666,7 @@ async def unknown_handler(update: Update, context: CallbackContext):
 
 
 # ============ MAIN ============
-async def main():
+def main():
     try:
         init_database()
         logger.info("Database initialized")
@@ -715,7 +712,7 @@ async def main():
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown_handler))
         
         logger.info("Bot started...")
-        await application.run_polling(allowed_updates=Update.ALL_TYPES)
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
         
     except Exception as e:
         logger.error(f"Error in main: {e}")
@@ -723,8 +720,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    import asyncio
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        logging.error(f"Botni ishga tushirishda xatolik: {e}")
+    main()
