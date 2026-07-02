@@ -23,4 +23,4 @@ PROMO_PRICES = {
 }
 
 ADMIN_ID = 8632521282  # O'z ID niz yozing!
-ADMIN ID = 8656034255
+
