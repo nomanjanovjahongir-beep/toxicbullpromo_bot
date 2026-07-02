@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 
-# ============ BOT SOZLAMALARI ============
-# ✏️ O'ZGARTIRISH KERAK! - O'z tokeningizni yozing
-BOT_TOKEN = "8901157648:AAER_bR0ntOjcaxDflrtCfFyRXd55qxl5to"
+import os
+from dotenv import load_dotenv
 
-# ✏️ O'ZGARTIRISH KERAK! - Bot username (@ belgisiz)
+load_dotenv()
+
+# ============ BOT SOZLAMALARI ============
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8901157648:AAER_bR0ntOjcaxDflrtCfFyRXd55qxl5to")
 BOT_USERNAME = "toxicbullpromo_bot"
 
 # ============ MAJBURIY KANALLAR ============
-# ✏️ O'ZGARTIRISH KERAK! - O'z kanallaringizni yozing
 REQUIRED_CHANNELS = {
-    "Kanal 1": "@englishwithjkk",
+    "Kanal 1": "@frezybulldrop",
+    "Kanal 2": "@fendi_bulldrop",
 }
 
 # ============ DATABASE ============
@@ -27,4 +29,5 @@ PROMO_PRICES = {
 }
 
 # ============ ADMIN ============
-ADMIN_ID = 8632521282
+# ✏️ O'Z TELEGRAM ID NIGIZNI YOZING!
+ADMIN_ID = 8632521282  # ← SHU YERGA O'Z ID NIGIZNI YOZING
