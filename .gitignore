@@ -1,1 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+*.dylib
 
+# Database
+users.db
+*.sqlite3
+*.db
+
+# Bot
+.env
+config.local.py
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
