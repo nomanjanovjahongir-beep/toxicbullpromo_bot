@@ -85,9 +85,7 @@ async def get_or_create_user(update: Update, context: CallbackContext) -> Option
 
 # ... (Sizning kanallarni tekshiradigan kodlaringiz shu yerda turibdi) ...
 
-    async def check_subscription(update, context):
-    # 1. Telegramdan kelgan so'rovni (query) olamiz
-    query = update.callback_query
+
     
     # Agar so'rov bo'sh bo'lsa, kod davom etmaydi va xato bermaydi
     if not query:
