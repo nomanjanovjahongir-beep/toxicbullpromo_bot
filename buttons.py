@@ -4,7 +4,6 @@ from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, 
 
 
 def get_main_keyboard():
-    """Asosiy tugmalar - oddiy foydalanuvchilar uchun"""
     buttons = [
         [KeyboardButton("👤 Profil"), KeyboardButton("🔗 Referral")],
         [KeyboardButton("💰 Promo"), KeyboardButton("🏆 Reyting")],
@@ -14,7 +13,6 @@ def get_main_keyboard():
 
 
 def get_admin_keyboard():
-    """Admin tugmalar - admin foydalanuvchi uchun"""
     buttons = [
         [KeyboardButton("📊 Statistika"), KeyboardButton("💰 Coin berish")],
         [KeyboardButton("📢 Xabar yuborish"), KeyboardButton("👥 Foydalanuvchilar")],
@@ -24,36 +22,20 @@ def get_admin_keyboard():
 
 
 def get_back_keyboard():
-    """Orqaga qaytish tugmasi"""
     buttons = [[KeyboardButton("🔙 Orqaga")]]
     return ReplyKeyboardMarkup(buttons, resize_keyboard=True)
 
 
 def get_promo_keyboard():
-    """Promo almashtirish tugmalari - InlineKeyboardButton ko'rinishida"""
     from config import PROMO_PRICES
-    
     keyboard = []
-    
-    # Har bir promo uchun alohida tugma
     for promo_name in PROMO_PRICES.keys():
-        keyboard.append([
-            InlineKeyboardButton(
-                f"🎫 {promo_name}", 
-                callback_data=f"promo_{promo_name}"
-            )
-        ])
-    
-    # Orqaga tugmasi
-    keyboard.append([
-        InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")
-    ])
-    
+        keyboard.append([InlineKeyboardButton(f"🎫 {promo_name}", callback_data=f"promo_{promo_name}")])
+    keyboard.append([InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")])
     return InlineKeyboardMarkup(keyboard)
 
 
 def get_referral_keyboard():
-    """Referral link uchun tugma - linkni nusxalash"""
     keyboard = [
         [InlineKeyboardButton("📋 Linkni nusxalash", callback_data="copy_referral_link")],
         [InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")]
@@ -62,15 +44,11 @@ def get_referral_keyboard():
 
 
 def get_referral_link_keyboard():
-    """Faqat referral linkni ko'rsatish uchun - orqaga tugmasi bilan"""
-    keyboard = [
-        [InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")]
-    ]
+    keyboard = [[InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")]]
     return InlineKeyboardMarkup(keyboard)
 
 
 def get_admin_coin_keyboard():
-    """Coin berish/olish uchun admin tugmalar - InlineKeyboardButton ko'rinishida"""
     keyboard = [
         [InlineKeyboardButton("➕ 10 coin", callback_data="add_10")],
         [InlineKeyboardButton("➕ 50 coin", callback_data="add_50")],
