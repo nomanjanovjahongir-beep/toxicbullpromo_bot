@@ -85,29 +85,55 @@ async def get_or_create_user(update: Update, context: CallbackContext) -> Option
 
 # ... (Sizning kanallarni tekshiradigan kodlaringiz shu yerda turibdi) ...
 
-    # Tasavvur qilaylik, tekshiruv natijasi 'is_member' o'zgaruvchisida turibdi
-    if is_member:  # Agar foydalanuvchi hamma kanalga a'zo bo'lgan bo'lsa
-        # 1. Obuna bo'ling degan eski xabarni va tugmalarni butunlay o'chiramiz
+    async def check_subscription(update, context):
+    # 1. Telegramdan kelgan so'rovni (query) olamiz
+    query = update.callback_query
+    
+    # Agar so'rov bo'sh bo'lsa, kod davom etmaydi va xato bermaydi
+    if not query:
+        return
+
+    # Tugma bosilgandagi yuklanish (aylanib turadigan soat) belgisini darhol yo'qotamiz
+    await query.answer()
+    
+    user_id = query.from_user.id
+    chat_id = query.message.chat_id
+    message_id = query.message.message_id
+
+    # 2. DIQQAT: Bu yerda sizning kanallarni tekshiradigan kodingiz turishi kerak.
+    # Men namuna sifatida 'is_member' o'zgaruvchisini yaratyapman.
+    # Siz o'z kodingizdagi tekshiruv natijasini shu o'zgaruvchiga bog'lang!
+    
+    # Masalan, sizda tekshiruvchi funksiya bo'lsa: 
+    # is_member = await sizning_tekshiruvchi_funksiyangiz(user_id)
+    
+    is_member = True # <--- O'zingizning haqiqiy tekshiruv kodingizni shu yerga qo'ying!
+
+    if is_member:
+        # 3. Agar obuna bo'lgan bo'lsa, eski xabarni o'chiramiz
         try:
             await context.bot.delete_message(
-                chat_id=update.callback_query.message.chat_id,
-                message_id=update.callback_query.message.message_id
+                chat_id=chat_id,
+                message_id=message_id
+            )
+        except Exception as e:
+            print(f"Xabarni o'chirishda xatolik: {e}")
+
+        # 4. Foydalanuvchiga muvaffaqiyatli xabar yuboramiz
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="✅ Rahmat! Hamma kanallarga obuna bo'ldingiz. Botdan foydalanishingiz mumkin."
+        )
+    else:
+        # 5. Agar hali obuna bo'lmagan bo'lsa, ogohlantirish chiqaramiz
+        try:
+            await query.answer(
+                text="❌ Siz hali hamma kanallarga obuna bo'lmagansiz!",
+                show_alert=True
             )
         except Exception:
-            pass  # Agar xabar allaqachon o'chirilgan bo'lsa, dastur to'xtab qolmasligi uchun
-
-        # 2. Foydalanuvchiga muvaffaqiyatli o'tganini aytamiz
-        await context.bot.send_message(
-            chat_id=update.callback_query.from_user.id,
-            text="✅ Rahmat! Hamma kanallarga obuna bo'ldingiz. Endi botdan foydalanishingiz mumkin!"
-        )
+            pass
         
-    else:  # Agar hali hamma kanalga obuna bo'lmagan bo'lsa
-        # 3. Eski xabar o'chmaydi, shunchaki ekran tepasida ogohlantirish chiqadi
-        await update.callback_query.answer(
-            text="❌ Siz hali hamma kanallarga obuna bo'lmagansiz! Iltimos, tekshirib qaytadan urinib ko'ring.",
-            show_alert=True  # Ekran o'rtasida ogohlantirish oynasini chiqaradi
-        )
 async def get_subscription_keyboard(user_id: int, context: CallbackContext):
     keyboard = []
     not_subscribed = []
