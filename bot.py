@@ -876,4 +876,4 @@ async def admin_users_handler(update: Update, context: CallbackContext):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT telegram_id, username, first_name,
+                SELECT telegram_id, username
