@@ -876,4 +876,35 @@ async def admin_users_handler(update: Update, context: CallbackContext):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT telegram_id, username
+                SELECT telegram_id, username, first_name, coins, referrals, created_at
+                FROM users
+                ORDER BY created_at DESC
+                LIMIT 20
+            """)
+            users = cursor.fetchall()
+
+        if not users:
+            await update.message.reply_text("❌ Hech qanday foydalanuvchi yo'q!")
+            return
+
+        text = "👥 <b>Oxirgi 20 foydalanuvchi</b>\n\n"
+
+        for user in users:
+            name = user.get('first_name', 'Noma\'lum')[:15]
+            text += (
+                f"🆔 {user['telegram_id']}\n"
+                f"👤 {name}\n"
+                f"💰 {user['coins']} coin | 🔗 {user['referrals']} referral\n"
+                f"📅 {user['created_at'][:10]}\n"
+                f"{'─'*20}\n"
+            )
+
+        await update.message.reply_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=get_admin_keyboard()
+        )
+
+    except Exception as e:
+        logger.error(f"Error in admin_users_handler: {e}")
+        await update.message.reply_text("❌ Xatolik yuz berdi.")
