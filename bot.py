@@ -3,7 +3,6 @@
 import logging
 import random
 import string
-import asyncio
 from typing import Optional
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -61,7 +60,7 @@ def extract_referral_id(text: str) -> Optional[int]:
         return None
 
 
-async def get_or_create_user(update: Update, context: CallbackContext) -> Optional[dict]:
+def get_or_create_user(update: Update, context: CallbackContext) -> Optional[dict]:
     user = update.effective_user
     if not user:
         return None
@@ -82,16 +81,26 @@ async def get_or_create_user(update: Update, context: CallbackContext) -> Option
     return get_user(user.id)
 
 
-async def check_subscription(user_id: int, context: CallbackContext) -> bool:
+def check_subscription_sync(user_id: int, context: CallbackContext) -> bool:
+    """Synchronous version for subscription check"""
     if not REQUIRED_CHANNELS:
         return True
+    
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     
     for channel_name, channel_username in REQUIRED_CHANNELS.items():
         channel_username = channel_username.replace('@', '')
         try:
-            chat_member = await context.bot.get_chat_member(
-                chat_id=f"@{channel_username}",
-                user_id=user_id
+            chat_member = loop.run_until_complete(
+                context.bot.get_chat_member(
+                    chat_id=f"@{channel_username}",
+                    user_id=user_id
+                )
             )
             if chat_member.status not in ['member', 'administrator', 'creator']:
                 return False
@@ -102,16 +111,25 @@ async def check_subscription(user_id: int, context: CallbackContext) -> bool:
     return True
 
 
-async def get_subscription_keyboard(user_id: int, context: CallbackContext):
+def get_subscription_keyboard_sync(user_id: int, context: CallbackContext):
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
     keyboard = []
     not_subscribed = []
     
     for channel_name, channel_username in REQUIRED_CHANNELS.items():
         channel_username = channel_username.replace('@', '')
         try:
-            chat_member = await context.bot.get_chat_member(
-                chat_id=f"@{channel_username}",
-                user_id=user_id
+            chat_member = loop.run_until_complete(
+                context.bot.get_chat_member(
+                    chat_id=f"@{channel_username}",
+                    user_id=user_id
+                )
             )
             if chat_member.status not in ['member', 'administrator', 'creator']:
                 not_subscribed.append((channel_name, channel_username))
@@ -129,12 +147,23 @@ async def get_subscription_keyboard(user_id: int, context: CallbackContext):
     return InlineKeyboardMarkup(keyboard)
 
 
+async def check_subscription(user_id: int, context: CallbackContext) -> bool:
+    return check_subscription_sync(user_id, context)
+
+
+async def get_subscription_keyboard(user_id: int, context: CallbackContext):
+    return get_subscription_keyboard_sync(user_id, context)
+
+
+async def get_or_create_user_async(update: Update, context: CallbackContext) -> Optional[dict]:
+    return get_or_create_user(update, context)
+
+
 async def start_command(update: Update, context: CallbackContext):
     try:
         user = update.effective_user
         user_id = user.id
         
-        # Obunani tekshirish
         if not await check_subscription(user_id, context):
             keyboard = await get_subscription_keyboard(user_id, context)
             if keyboard:
@@ -142,23 +171,19 @@ async def start_command(update: Update, context: CallbackContext):
                 await update.message.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
                 return
         
-        # Foydalanuvchini yaratish
-        db_user = await get_or_create_user(update, context)
+        db_user = await get_or_create_user_async(update, context)
         if not db_user:
             await update.message.reply_text("❌ Xatolik yuz berdi.")
             return
         
-        # Referral xabar
         referral_message = ""
         if db_user.get("invited_by"):
             referrer = get_user(db_user["invited_by"])
             if referrer:
                 referral_message = f"\n\n👤 Siz {referrer.get('first_name', '')} tomonidan taklif qilindingiz!"
         
-        # Xush kelibsiz
         welcome_text = f"👋 Assalomu alaykum, {user.first_name}!\n📱 Telegram Referral Botga xush kelibsiz!{referral_message}\n\n💡 Botdan foydalanish uchun quyidagi tugmalardan foydalaning:"
         
-        # Admin yoki oddiy foydalanuvchi
         if is_admin(user_id):
             await update.message.reply_text(welcome_text, reply_markup=get_admin_keyboard())
         else:
@@ -216,7 +241,6 @@ async def subscription_callback(update: Update, context: CallbackContext):
                 await query.edit_message_text(text, parse_mode="HTML", reply_markup=keyboard)
     except Exception as e:
         logger.error(f"Error in subscription_callback: {e}")
-        await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
 async def profile_handler(update: Update, context: CallbackContext):
@@ -295,7 +319,6 @@ async def referral_callback_handler(update: Update, context: CallbackContext):
             )
     except Exception as e:
         logger.error(f"Error in referral_callback_handler: {e}")
-        await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
 async def promo_handler(update: Update, context: CallbackContext):
@@ -372,7 +395,6 @@ async def promo_callback_handler(update: Update, context: CallbackContext):
             logger.info(f"User {user_id} exchanged {coins_needed} coins for {promo_name}")
     except Exception as e:
         logger.error(f"Error in promo_callback_handler: {e}")
-        await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
 async def rating_handler(update: Update, context: CallbackContext):
@@ -520,7 +542,6 @@ async def admin_coin_callback_handler(update: Update, context: CallbackContext):
             )
     except Exception as e:
         logger.error(f"Error in admin_coin_callback_handler: {e}")
-        await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
 async def admin_coin_command_handler(update: Update, context: CallbackContext):
@@ -689,37 +710,16 @@ if __name__ == "__main__":
             except Exception as e:
                 logger.error(f"Keep-alive error: {e}")
         
-        # Botni ishga tushirish
-        app = Application.builder().token(BOT_TOKEN).build()
+        # Botni ishga tushirish - async bo'lmagan usul
+        import asyncio
         
-        # Handlerlar
-        app.add_handler(CommandHandler("start", start_command))
-        app.add_handler(CommandHandler("coin", admin_coin_command_handler))
-        
-        app.add_handler(CallbackQueryHandler(subscription_callback, pattern="^check_subscription$"))
-        app.add_handler(CallbackQueryHandler(referral_callback_handler, pattern="^(copy_referral_link|back_to_menu)$"))
-        app.add_handler(CallbackQueryHandler(promo_callback_handler, pattern="^(promo_|back_to_menu)$"))
-        app.add_handler(CallbackQueryHandler(admin_coin_callback_handler, pattern="^(add_|sub_|admin_back)$"))
-        
-        app.add_handler(MessageHandler(filters.Regex("^👤 Profil$"), profile_handler))
-        app.add_handler(MessageHandler(filters.Regex("^🔗 Referral$"), referral_handler))
-        app.add_handler(MessageHandler(filters.Regex("^💰 Promo$"), promo_handler))
-        app.add_handler(MessageHandler(filters.Regex("^🏆 Reyting$"), rating_handler))
-        app.add_handler(MessageHandler(filters.Regex("^❓ Yordam$"), help_handler))
-        
-        app.add_handler(MessageHandler(filters.Regex("^👑 Admin$"), admin_panel_handler))
-        app.add_handler(MessageHandler(filters.Regex("^📊 Statistika$"), admin_stats_handler))
-        app.add_handler(MessageHandler(filters.Regex("^💰 Coin berish$"), admin_coin_handler))
-        app.add_handler(MessageHandler(filters.Regex("^📢 Xabar yuborish$"), admin_broadcast_handler))
-        app.add_handler(MessageHandler(filters.Regex("^👥 Foydalanuvchilar$"), admin_users_handler))
-        app.add_handler(MessageHandler(filters.Regex("^🔙 Asosiy menyu$"), back_handler))
-        
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_broadcast_send))
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown_handler))
-        
-        logger.info("Bot started...")
-        app.run_polling(allowed_updates=Update.ALL_TYPES)
-        
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        raise
+        async def run_bot():
+            app = Application.builder().token(BOT_TOKEN).build()
+            
+            app.add_handler(CommandHandler("start", start_command))
+            app.add_handler(CommandHandler("coin", admin_coin_command_handler))
+            
+            app.add_handler(CallbackQueryHandler(subscription_callback, pattern="^check_subscription$"))
+            app.add_handler(CallbackQueryHandler(referral_callback_handler, pattern="^(copy_referral_link|back_to_menu)$"))
+            app.add_handler(CallbackQueryHandler(promo_callback_handler, pattern="^(promo_|back_to_menu)$"))
+            app.add_handler(CallbackQueryHandler(admin_coin_callback_handler, pattern="
