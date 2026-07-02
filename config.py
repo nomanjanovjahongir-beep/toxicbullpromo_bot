@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "8901157648:AAER_bR0ntOjcaxDflrtCfFyRXd55qxl5to")
-BOT_USERNAME = "bullpromo_bot"
+BOT_USERNAME = "toxicbullpromo_bot"
 
 REQUIRED_CHANNELS = {
     "Kanal 1": "@frezybulldrop",
