@@ -41,7 +41,7 @@ try:
     from keep_alive import keep_alive
 except ImportError:
     keep_alive = None
-    print("⚠️ keep_alive moduli topilmadi, 24/7 ishlamasligi mumkin")
+    print("⚠️ keep_alive moduli topilmadi")
 
 # Logging
 logging.basicConfig(
@@ -113,16 +113,12 @@ async def check_subscription(user_id: int, context: CallbackContext) -> bool:
                 )
 
                 if chat_member.status not in ['member', 'administrator', 'creator']:
-                    logger.info(f"❌ User {user_id} NOT subscribed to {channel_name}")
                     return False
-                else:
-                    logger.info(f"✅ User {user_id} subscribed to {channel_name}")
 
             except Exception as e:
                 logger.error(f"Error checking channel {channel_name}: {e}")
                 return False
 
-        logger.info(f"✅ All checks passed for user {user_id}")
         return True
 
     except Exception as e:
@@ -177,12 +173,10 @@ async def start_command(update: Update, context: CallbackContext):
         user = update.effective_user
         user_id = user.id
 
-        # Check subscription
         if not await check_subscription(user_id, context):
             keyboard = await get_subscription_keyboard(user_id, context)
 
             if keyboard is None:
-                # User subscribed to all
                 db_user = await get_or_create_user(update, context)
                 if not db_user:
                     await update.message.reply_text("❌ Xatolik yuz berdi.")
@@ -195,27 +189,15 @@ async def start_command(update: Update, context: CallbackContext):
                 )
 
                 if is_admin(user_id):
-                    await update.message.reply_text(
-                        welcome_text,
-                        reply_markup=get_admin_keyboard()
-                    )
+                    await update.message.reply_text(welcome_text, reply_markup=get_admin_keyboard())
                 else:
-                    await update.message.reply_text(
-                        welcome_text,
-                        reply_markup=get_main_keyboard()
-                    )
+                    await update.message.reply_text(welcome_text, reply_markup=get_main_keyboard())
             else:
                 text = "🔒 <b>Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling!</b>\n\n"
                 text += "⬇️ Kanallarga obuna bo'ling va ✅ tugmasini bosing:\n"
-
-                await update.message.reply_text(
-                    text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
+                await update.message.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
             return
 
-        # User is subscribed
         db_user = await get_or_create_user(update, context)
         if not db_user:
             await update.message.reply_text("❌ Xatolik yuz berdi.")
@@ -234,15 +216,9 @@ async def start_command(update: Update, context: CallbackContext):
         )
 
         if is_admin(user_id):
-            await update.message.reply_text(
-                welcome_text,
-                reply_markup=get_admin_keyboard()
-            )
+            await update.message.reply_text(welcome_text, reply_markup=get_admin_keyboard())
         else:
-            await update.message.reply_text(
-                welcome_text,
-                reply_markup=get_main_keyboard()
-            )
+            await update.message.reply_text(welcome_text, reply_markup=get_main_keyboard())
 
         logger.info(f"User {user.id} started the bot")
 
@@ -258,9 +234,7 @@ async def subscription_callback(update: Update, context: CallbackContext):
 
     user_id = query.from_user.id
 
-    # Check subscription
     if await check_subscription(user_id, context):
-        # User is subscribed
         db_user = get_user(user_id)
         if not db_user:
             user = query.from_user
@@ -282,14 +256,9 @@ async def subscription_callback(update: Update, context: CallbackContext):
                 parse_mode="HTML",
                 reply_markup=get_main_keyboard()
             )
-
-        logger.info(f"✅ User {user_id} subscribed to all channels")
     else:
-        # User not subscribed
         keyboard = await get_subscription_keyboard(user_id, context)
-
         if keyboard is None:
-            # All subscribed
             db_user = get_user(user_id)
             if not db_user:
                 user = query.from_user
@@ -314,12 +283,7 @@ async def subscription_callback(update: Update, context: CallbackContext):
         else:
             text = "❌ <b>Siz hali quyidagi kanallarga obuna bo'lmagansiz!</b>\n\n"
             text += "⬇️ Kanallarga obuna bo'ling va ✅ tugmasini bosing:\n"
-
-            await query.edit_message_text(
-                text,
-                parse_mode="HTML",
-                reply_markup=keyboard
-            )
+            await query.edit_message_text(text, parse_mode="HTML", reply_markup=keyboard)
 
 
 async def profile_handler(update: Update, context: CallbackContext):
@@ -332,12 +296,7 @@ async def profile_handler(update: Update, context: CallbackContext):
             if keyboard:
                 text = "🔒 <b>Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling!</b>\n\n"
                 text += "⬇️ Kanallarga obuna bo'ling va ✅ tugmasini bosing:\n"
-
-                await update.message.reply_text(
-                    text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
+                await update.message.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
             return
 
         db_user = get_user(user_id)
@@ -357,17 +316,9 @@ async def profile_handler(update: Update, context: CallbackContext):
         )
 
         if is_admin(user_id):
-            await update.message.reply_text(
-                profile_text,
-                parse_mode="HTML",
-                reply_markup=get_admin_keyboard()
-            )
+            await update.message.reply_text(profile_text, parse_mode="HTML", reply_markup=get_admin_keyboard())
         else:
-            await update.message.reply_text(
-                profile_text,
-                parse_mode="HTML",
-                reply_markup=get_main_keyboard()
-            )
+            await update.message.reply_text(profile_text, parse_mode="HTML", reply_markup=get_main_keyboard())
 
     except Exception as e:
         logger.error(f"Error in profile_handler: {e}")
@@ -384,12 +335,7 @@ async def referral_handler(update: Update, context: CallbackContext):
             if keyboard:
                 text = "🔒 <b>Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling!</b>\n\n"
                 text += "⬇️ Kanallarga obuna bo'ling va ✅ tugmasini bosing:\n"
-
-                await update.message.reply_text(
-                    text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
+                await update.message.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
             return
 
         db_user = get_user(user_id)
@@ -408,18 +354,7 @@ async def referral_handler(update: Update, context: CallbackContext):
             f"📋 Referral linkni olish uchun tugmani bosing:"
         )
 
-        if is_admin(user_id):
-            await update.message.reply_text(
-                referral_text,
-                parse_mode="HTML",
-                reply_markup=get_referral_keyboard()
-            )
-        else:
-            await update.message.reply_text(
-                referral_text,
-                parse_mode="HTML",
-                reply_markup=get_referral_keyboard()
-            )
+        await update.message.reply_text(referral_text, parse_mode="HTML", reply_markup=get_referral_keyboard())
 
     except Exception as e:
         logger.error(f"Error in referral_handler: {e}")
@@ -434,24 +369,15 @@ async def referral_callback_handler(update: Update, context: CallbackContext):
     user_id = query.from_user.id
     data = query.data
 
-    # Handle back to menu
     if data == "back_to_menu":
         if is_admin(user_id):
-            await query.edit_message_text(
-                "📱 Asosiy menyuga qaytdingiz",
-                reply_markup=get_admin_keyboard()
-            )
+            await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_admin_keyboard())
         else:
-            await query.edit_message_text(
-                "📱 Asosiy menyuga qaytdingiz",
-                reply_markup=get_main_keyboard()
-            )
+            await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_main_keyboard())
         return
 
-    # Handle copy referral link
     if data == "copy_referral_link":
         referral_link = f"https://t.me/{BOT_USERNAME}?start={user_id}"
-
         await query.edit_message_text(
             f"📋 <b>Referral link</b>\n\n"
             f"<code>{referral_link}</code>\n\n"
@@ -471,12 +397,7 @@ async def promo_handler(update: Update, context: CallbackContext):
             if keyboard:
                 text = "🔒 <b>Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling!</b>\n\n"
                 text += "⬇️ Kanallarga obuna bo'ling va ✅ tugmasini bosing:\n"
-
-                await update.message.reply_text(
-                    text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
+                await update.message.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
             return
 
         db_user = get_user(user_id)
@@ -495,18 +416,7 @@ async def promo_handler(update: Update, context: CallbackContext):
         for name, coins_needed in PROMO_PRICES.items():
             promo_text += f"🎫 {name} — <b>{coins_needed} coin</b>\n"
 
-        if is_admin(user_id):
-            await update.message.reply_text(
-                promo_text,
-                parse_mode="HTML",
-                reply_markup=get_promo_keyboard()
-            )
-        else:
-            await update.message.reply_text(
-                promo_text,
-                parse_mode="HTML",
-                reply_markup=get_promo_keyboard()
-            )
+        await update.message.reply_text(promo_text, parse_mode="HTML", reply_markup=get_promo_keyboard())
 
     except Exception as e:
         logger.error(f"Error in promo_handler: {e}")
@@ -521,21 +431,13 @@ async def promo_callback_handler(update: Update, context: CallbackContext):
     user_id = query.from_user.id
     data = query.data
 
-    # Handle back to menu
     if data == "back_to_menu":
         if is_admin(user_id):
-            await query.edit_message_text(
-                "📱 Asosiy menyuga qaytdingiz",
-                reply_markup=get_admin_keyboard()
-            )
+            await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_admin_keyboard())
         else:
-            await query.edit_message_text(
-                "📱 Asosiy menyuga qaytdingiz",
-                reply_markup=get_main_keyboard()
-            )
+            await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_main_keyboard())
         return
 
-    # Handle promo selection
     if data.startswith("promo_"):
         promo_name = data.replace("promo_", "")
 
@@ -592,12 +494,7 @@ async def rating_handler(update: Update, context: CallbackContext):
             if keyboard:
                 text = "🔒 <b>Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling!</b>\n\n"
                 text += "⬇️ Kanallarga obuna bo'ling va ✅ tugmasini bosing:\n"
-
-                await update.message.reply_text(
-                    text,
-                    parse_mode="HTML",
-                    reply_markup=keyboard
-                )
+                await update.message.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
             return
 
         top_referrals = get_top_referrals(10)
@@ -624,17 +521,9 @@ async def rating_handler(update: Update, context: CallbackContext):
             rating_text += "Hali coin yo'q\n"
 
         if is_admin(user_id):
-            await update.message.reply_text(
-                rating_text,
-                parse_mode="HTML",
-                reply_markup=get_admin_keyboard()
-            )
+            await update.message.reply_text(rating_text, parse_mode="HTML", reply_markup=get_admin_keyboard())
         else:
-            await update.message.reply_text(
-                rating_text,
-                parse_mode="HTML",
-                reply_markup=get_main_keyboard()
-            )
+            await update.message.reply_text(rating_text, parse_mode="HTML", reply_markup=get_main_keyboard())
 
     except Exception as e:
         logger.error(f"Error in rating_handler: {e}")
@@ -662,17 +551,9 @@ async def help_handler(update: Update, context: CallbackContext):
 
         user_id = update.effective_user.id
         if is_admin(user_id):
-            await update.message.reply_text(
-                help_text,
-                parse_mode="HTML",
-                reply_markup=get_admin_keyboard()
-            )
+            await update.message.reply_text(help_text, parse_mode="HTML", reply_markup=get_admin_keyboard())
         else:
-            await update.message.reply_text(
-                help_text,
-                parse_mode="HTML",
-                reply_markup=get_main_keyboard()
-            )
+            await update.message.reply_text(help_text, parse_mode="HTML", reply_markup=get_main_keyboard())
 
     except Exception as e:
         logger.error(f"Error in help_handler: {e}")
@@ -684,18 +565,24 @@ async def back_handler(update: Update, context: CallbackContext):
     try:
         user_id = update.effective_user.id
         if is_admin(user_id):
-            await update.message.reply_text(
-                "📱 Asosiy menyuga qaytdingiz",
-                reply_markup=get_admin_keyboard()
-            )
+            await update.message.reply_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_admin_keyboard())
         else:
-            await update.message.reply_text(
-                "📱 Asosiy menyuga qaytdingiz",
-                reply_markup=get_main_keyboard()
-            )
+            await update.message.reply_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_main_keyboard())
     except Exception as e:
         logger.error(f"Error in back_handler: {e}")
         await update.message.reply_text("❌ Xatolik yuz berdi.")
+
+
+async def unknown_handler(update: Update, context: CallbackContext):
+    """Handle unknown commands"""
+    try:
+        user_id = update.effective_user.id
+        if is_admin(user_id):
+            await update.message.reply_text("❌ Noma'lum buyruq. Iltimos, tugmalardan foydalaning.", reply_markup=get_admin_keyboard())
+        else:
+            await update.message.reply_text("❌ Noma'lum buyruq. Iltimos, tugmalardan foydalaning.", reply_markup=get_main_keyboard())
+    except Exception as e:
+        logger.error(f"Error in unknown_handler: {e}")
 
 
 # ============ ADMIN HANDLERS ============
@@ -717,11 +604,7 @@ async def admin_panel_handler(update: Update, context: CallbackContext):
             "👥 Foydalanuvchilar - Foydalanuvchilar ro'yxati"
         )
 
-        await update.message.reply_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=get_admin_keyboard()
-        )
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=get_admin_keyboard())
 
     except Exception as e:
         logger.error(f"Error in admin_panel_handler: {e}")
@@ -763,11 +646,7 @@ async def admin_stats_handler(update: Update, context: CallbackContext):
             f"📅 Bugun kelganlar: <b>{today_users}</b>"
         )
 
-        await update.message.reply_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=get_admin_keyboard()
-        )
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=get_admin_keyboard())
 
     except Exception as e:
         logger.error(f"Error in admin_stats_handler: {e}")
@@ -791,11 +670,7 @@ async def admin_coin_handler(update: Update, context: CallbackContext):
             "Yoki quyidagi tugmalardan foydalaning:"
         )
 
-        await update.message.reply_text(
-            text,
-            parse_mode="HTML",
-            reply_markup=get_admin_coin_keyboard()
-        )
+        await update.message.reply_text(text, parse_mode="HTML", reply_markup=get_admin_coin_keyboard())
 
     except Exception as e:
         logger.error(f"Error in admin_coin_handler: {e}")
@@ -816,10 +691,7 @@ async def admin_coin_callback_handler(update: Update, context: CallbackContext):
     data = query.data
 
     if data == "admin_back":
-        await query.edit_message_text(
-            "👑 Admin panel",
-            reply_markup=get_admin_keyboard()
-        )
+        await query.edit_message_text("👑 Admin panel", reply_markup=get_admin_keyboard())
         return
 
     coin_map = {
@@ -946,10 +818,7 @@ async def admin_broadcast_send(update: Update, context: CallbackContext):
 
         if text == "/cancel":
             context.user_data['broadcast'] = False
-            await update.message.reply_text(
-                "❌ Xabar yuborish bekor qilindi",
-                reply_markup=get_admin_keyboard()
-            )
+            await update.message.reply_text("❌ Xabar yuborish bekor qilindi", reply_markup=get_admin_keyboard())
             return
 
         with get_db_connection() as conn:
@@ -964,9 +833,7 @@ async def admin_broadcast_send(update: Update, context: CallbackContext):
         sent = 0
         failed = 0
 
-        progress_msg = await update.message.reply_text(
-            f"⏳ Xabar yuborilmoqda... 0/{len(users)}"
-        )
+        progress_msg = await update.message.reply_text(f"⏳ Xabar yuborilmoqda... 0/{len(users)}")
 
         for i, user in enumerate(users):
             try:
@@ -980,8 +847,33 @@ async def admin_broadcast_send(update: Update, context: CallbackContext):
                 failed += 1
 
             if i % 10 == 0:
-                await progress_msg.edit_text(
-                    f"⏳ Xabar yuborilmoqda... {i+1}/{len(users)}"
-                )
+                await progress_msg.edit_text(f"⏳ Xabar yuborilmoqda... {i+1}/{len(users)}")
 
-        await
+        await progress_msg.edit_text(
+            f"✅ Xabar yuborildi!\n\n"
+            f"📤 Yuborildi: {sent}\n"
+            f"❌ Yuborilmadi: {failed}\n"
+            f"👥 Jami: {len(users)}",
+            reply_markup=get_admin_keyboard()
+        )
+
+        context.user_data['broadcast'] = False
+
+    except Exception as e:
+        logger.error(f"Error in admin_broadcast_send: {e}")
+        await update.message.reply_text("❌ Xatolik yuz berdi.")
+
+
+async def admin_users_handler(update: Update, context: CallbackContext):
+    """Foydalanuvchilar ro'yxati"""
+    try:
+        user_id = update.effective_user.id
+
+        if not is_admin(user_id):
+            await update.message.reply_text("❌ Siz admin emassiz!")
+            return
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT telegram_id, username, first_name,
