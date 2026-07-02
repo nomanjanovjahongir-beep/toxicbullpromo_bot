@@ -134,6 +134,7 @@ async def start_command(update: Update, context: CallbackContext):
         user = update.effective_user
         user_id = user.id
         
+        # Obunani tekshirish
         if not await check_subscription(user_id, context):
             keyboard = await get_subscription_keyboard(user_id, context)
             if keyboard:
@@ -141,19 +142,23 @@ async def start_command(update: Update, context: CallbackContext):
                 await update.message.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
                 return
         
+        # Foydalanuvchini yaratish
         db_user = await get_or_create_user(update, context)
         if not db_user:
             await update.message.reply_text("❌ Xatolik yuz berdi.")
             return
         
+        # Referral xabar
         referral_message = ""
         if db_user.get("invited_by"):
             referrer = get_user(db_user["invited_by"])
             if referrer:
                 referral_message = f"\n\n👤 Siz {referrer.get('first_name', '')} tomonidan taklif qilindingiz!"
         
+        # Xush kelibsiz
         welcome_text = f"👋 Assalomu alaykum, {user.first_name}!\n📱 Telegram Referral Botga xush kelibsiz!{referral_message}\n\n💡 Botdan foydalanish uchun quyidagi tugmalardan foydalaning:"
         
+        # Admin yoki oddiy foydalanuvchi
         if is_admin(user_id):
             await update.message.reply_text(welcome_text, reply_markup=get_admin_keyboard())
         else:
@@ -162,37 +167,23 @@ async def start_command(update: Update, context: CallbackContext):
         logger.info(f"User {user.id} started the bot")
     except Exception as e:
         logger.error(f"Error in start_command: {e}")
-        await update.message.reply_text("❌ Xatolik yuz berdi.")
+        await update.message.reply_text("❌ Xatolik yuz berdi. Iltimos, qaytadan /start bosing.")
 
 
 async def subscription_callback(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
-    user_id = query.from_user.id
-    
-    if await check_subscription(user_id, context):
-        user = query.from_user
-        db_user = get_user(user_id)
-        if not db_user:
-            username = user.username or ""
-            first_name = user.first_name or ""
-            add_user(user_id, username, first_name, None)
+    try:
+        query = update.callback_query
+        await query.answer()
+        user_id = query.from_user.id
         
-        if is_admin(user_id):
-            await query.edit_message_text(
-                "✅ <b>Siz barcha kanallarga muvaffaqiyatli obuna bo'ldingiz!</b>\n\n📱 Botdan foydalanishni boshlang.", 
-                parse_mode="HTML", 
-                reply_markup=get_admin_keyboard()
-            )
-        else:
-            await query.edit_message_text(
-                "✅ <b>Siz barcha kanallarga muvaffaqiyatli obuna bo'ldingiz!</b>\n\n📱 Botdan foydalanishni boshlang.", 
-                parse_mode="HTML", 
-                reply_markup=get_main_keyboard()
-            )
-    else:
-        keyboard = await get_subscription_keyboard(user_id, context)
-        if keyboard is None:
+        if await check_subscription(user_id, context):
+            user = query.from_user
+            db_user = get_user(user_id)
+            if not db_user:
+                username = user.username or ""
+                first_name = user.first_name or ""
+                add_user(user_id, username, first_name, None)
+            
             if is_admin(user_id):
                 await query.edit_message_text(
                     "✅ <b>Siz barcha kanallarga muvaffaqiyatli obuna bo'ldingiz!</b>\n\n📱 Botdan foydalanishni boshlang.", 
@@ -206,8 +197,26 @@ async def subscription_callback(update: Update, context: CallbackContext):
                     reply_markup=get_main_keyboard()
                 )
         else:
-            text = "❌ <b>Siz hali quyidagi kanallarga obuna bo'lmagansiz!</b>\n\n⬇️ Kanallarga obuna bo'ling va ✅ tugmasini bosing:\n"
-            await query.edit_message_text(text, parse_mode="HTML", reply_markup=keyboard)
+            keyboard = await get_subscription_keyboard(user_id, context)
+            if keyboard is None:
+                if is_admin(user_id):
+                    await query.edit_message_text(
+                        "✅ <b>Siz barcha kanallarga muvaffaqiyatli obuna bo'ldingiz!</b>\n\n📱 Botdan foydalanishni boshlang.", 
+                        parse_mode="HTML", 
+                        reply_markup=get_admin_keyboard()
+                    )
+                else:
+                    await query.edit_message_text(
+                        "✅ <b>Siz barcha kanallarga muvaffaqiyatli obuna bo'ldingiz!</b>\n\n📱 Botdan foydalanishni boshlang.", 
+                        parse_mode="HTML", 
+                        reply_markup=get_main_keyboard()
+                    )
+            else:
+                text = "❌ <b>Siz hali quyidagi kanallarga obuna bo'lmagansiz!</b>\n\n⬇️ Kanallarga obuna bo'ling va ✅ tugmasini bosing:\n"
+                await query.edit_message_text(text, parse_mode="HTML", reply_markup=keyboard)
+    except Exception as e:
+        logger.error(f"Error in subscription_callback: {e}")
+        await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
 async def profile_handler(update: Update, context: CallbackContext):
@@ -264,25 +273,29 @@ async def referral_handler(update: Update, context: CallbackContext):
 
 
 async def referral_callback_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
-    user_id = query.from_user.id
-    data = query.data
-    
-    if data == "back_to_menu":
-        if is_admin(user_id):
-            await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_admin_keyboard())
-        else:
-            await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_main_keyboard())
-        return
-    
-    if data == "copy_referral_link":
-        referral_link = f"https://t.me/{BOT_USERNAME}?start={user_id}"
-        await query.edit_message_text(
-            f"📋 <b>Referral link</b>\n\n<code>{referral_link}</code>\n\n📤 Linkni nusxalab, do'stlaringizga ulashing!", 
-            parse_mode="HTML", 
-            reply_markup=get_referral_link_keyboard()
-        )
+    try:
+        query = update.callback_query
+        await query.answer()
+        user_id = query.from_user.id
+        data = query.data
+        
+        if data == "back_to_menu":
+            if is_admin(user_id):
+                await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_admin_keyboard())
+            else:
+                await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_main_keyboard())
+            return
+        
+        if data == "copy_referral_link":
+            referral_link = f"https://t.me/{BOT_USERNAME}?start={user_id}"
+            await query.edit_message_text(
+                f"📋 <b>Referral link</b>\n\n<code>{referral_link}</code>\n\n📤 Linkni nusxalab, do'stlaringizga ulashing!", 
+                parse_mode="HTML", 
+                reply_markup=get_referral_link_keyboard()
+            )
+    except Exception as e:
+        logger.error(f"Error in referral_callback_handler: {e}")
+        await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
 async def promo_handler(update: Update, context: CallbackContext):
@@ -314,48 +327,52 @@ async def promo_handler(update: Update, context: CallbackContext):
 
 
 async def promo_callback_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
-    user_id = query.from_user.id
-    data = query.data
-    
-    if data == "back_to_menu":
-        if is_admin(user_id):
-            await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_admin_keyboard())
-        else:
-            await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_main_keyboard())
-        return
-    
-    if data.startswith("promo_"):
-        promo_name = data.replace("promo_", "")
-        if promo_name not in PROMO_PRICES:
-            await query.edit_message_text("❌ Noto'g'ri promo tanlandi.")
+    try:
+        query = update.callback_query
+        await query.answer()
+        user_id = query.from_user.id
+        data = query.data
+        
+        if data == "back_to_menu":
+            if is_admin(user_id):
+                await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_admin_keyboard())
+            else:
+                await query.edit_message_text("📱 Asosiy menyuga qaytdingiz", reply_markup=get_main_keyboard())
             return
         
-        coins_needed = PROMO_PRICES[promo_name]
-        db_user = get_user(user_id)
-        if not db_user:
-            await query.edit_message_text("❌ Siz ro'yxatdan o'tmagansiz. /start bosing.")
-            return
-        
-        user_coins = db_user.get('coins', 0)
-        if user_coins < coins_needed:
+        if data.startswith("promo_"):
+            promo_name = data.replace("promo_", "")
+            if promo_name not in PROMO_PRICES:
+                await query.edit_message_text("❌ Noto'g'ri promo tanlandi.")
+                return
+            
+            coins_needed = PROMO_PRICES[promo_name]
+            db_user = get_user(user_id)
+            if not db_user:
+                await query.edit_message_text("❌ Siz ro'yxatdan o'tmagansiz. /start bosing.")
+                return
+            
+            user_coins = db_user.get('coins', 0)
+            if user_coins < coins_needed:
+                await query.edit_message_text(
+                    f"❌ Coinlaringiz yetarli emas!\n\n💰 Sizda: {user_coins} coin\n💰 Kerak: {coins_needed} coin\n💰 Yetishmayapti: {coins_needed - user_coins} coin", 
+                    reply_markup=get_promo_keyboard()
+                )
+                return
+            
+            new_coins = user_coins - coins_needed
+            update_user_coins(user_id, new_coins)
+            promo_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+            
             await query.edit_message_text(
-                f"❌ Coinlaringiz yetarli emas!\n\n💰 Sizda: {user_coins} coin\n💰 Kerak: {coins_needed} coin\n💰 Yetishmayapti: {coins_needed - user_coins} coin", 
+                f"✅ <b>Promo muvaffaqiyatli almashtirildi!</b>\n\n📌 Promo: {promo_name}\n💰 Sarflangan coin: {coins_needed}\n💎 Qolgan coin: {new_coins}\n\n🎫 <b>Promo kodingiz:</b>\n<code>{promo_code}</code>\n\n📝 Promo kodni saqlab qo'ying!", 
+                parse_mode="HTML", 
                 reply_markup=get_promo_keyboard()
             )
-            return
-        
-        new_coins = user_coins - coins_needed
-        update_user_coins(user_id, new_coins)
-        promo_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
-        
-        await query.edit_message_text(
-            f"✅ <b>Promo muvaffaqiyatli almashtirildi!</b>\n\n📌 Promo: {promo_name}\n💰 Sarflangan coin: {coins_needed}\n💎 Qolgan coin: {new_coins}\n\n🎫 <b>Promo kodingiz:</b>\n<code>{promo_code}</code>\n\n📝 Promo kodni saqlab qo'ying!", 
-            parse_mode="HTML", 
-            reply_markup=get_promo_keyboard()
-        )
-        logger.info(f"User {user_id} exchanged {coins_needed} coins for {promo_name}")
+            logger.info(f"User {user_id} exchanged {coins_needed} coins for {promo_name}")
+    except Exception as e:
+        logger.error(f"Error in promo_callback_handler: {e}")
+        await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
 async def rating_handler(update: Update, context: CallbackContext):
@@ -479,27 +496,31 @@ async def admin_coin_handler(update: Update, context: CallbackContext):
 
 
 async def admin_coin_callback_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
-    user_id = query.from_user.id
-    
-    if not is_admin(user_id):
-        await query.edit_message_text("❌ Siz admin emassiz!")
-        return
-    
-    data = query.data
-    if data == "admin_back":
-        await query.edit_message_text("👑 Admin panel", reply_markup=get_admin_keyboard())
-        return
-    
-    coin_map = {"add_10": 10, "add_50": 50, "add_100": 100, "sub_10": -10, "sub_50": -50, "sub_100": -100}
-    if data in coin_map:
-        context.user_data['pending_coin'] = coin_map[data]
-        await query.edit_message_text(
-            f"💰 {coin_map[data]} coin {'berish' if coin_map[data] > 0 else 'olish'}\n\nFoydalanuvchi ID sini yozing:\n<code>/coin ID</code>\n\nMisol: <code>/coin 123456789</code>", 
-            parse_mode="HTML", 
-            reply_markup=get_admin_coin_keyboard()
-        )
+    try:
+        query = update.callback_query
+        await query.answer()
+        user_id = query.from_user.id
+        
+        if not is_admin(user_id):
+            await query.edit_message_text("❌ Siz admin emassiz!")
+            return
+        
+        data = query.data
+        if data == "admin_back":
+            await query.edit_message_text("👑 Admin panel", reply_markup=get_admin_keyboard())
+            return
+        
+        coin_map = {"add_10": 10, "add_50": 50, "add_100": 100, "sub_10": -10, "sub_50": -50, "sub_100": -100}
+        if data in coin_map:
+            context.user_data['pending_coin'] = coin_map[data]
+            await query.edit_message_text(
+                f"💰 {coin_map[data]} coin {'berish' if coin_map[data] > 0 else 'olish'}\n\nFoydalanuvchi ID sini yozing:\n<code>/coin ID</code>\n\nMisol: <code>/coin 123456789</code>", 
+                parse_mode="HTML", 
+                reply_markup=get_admin_coin_keyboard()
+            )
+    except Exception as e:
+        logger.error(f"Error in admin_coin_callback_handler: {e}")
+        await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
 async def admin_coin_command_handler(update: Update, context: CallbackContext):
@@ -656,8 +677,7 @@ async def unknown_handler(update: Update, context: CallbackContext):
         logger.error(f"Error in unknown_handler: {e}")
 
 
-# ============ MAIN ============
-async def main():
+if __name__ == "__main__":
     try:
         init_database()
         logger.info("Database initialized")
@@ -669,42 +689,37 @@ async def main():
             except Exception as e:
                 logger.error(f"Keep-alive error: {e}")
         
-        application = Application.builder().token(BOT_TOKEN).build()
+        # Botni ishga tushirish
+        app = Application.builder().token(BOT_TOKEN).build()
         
-        application.add_handler(CommandHandler("start", start_command))
-        application.add_handler(CommandHandler("coin", admin_coin_command_handler))
+        # Handlerlar
+        app.add_handler(CommandHandler("start", start_command))
+        app.add_handler(CommandHandler("coin", admin_coin_command_handler))
         
-        application.add_handler(CallbackQueryHandler(subscription_callback, pattern="^check_subscription$"))
-        application.add_handler(CallbackQueryHandler(referral_callback_handler, pattern="^(copy_referral_link|back_to_menu)$"))
-        application.add_handler(CallbackQueryHandler(promo_callback_handler, pattern="^(promo_|back_to_menu)$"))
-        application.add_handler(CallbackQueryHandler(admin_coin_callback_handler, pattern="^(add_|sub_|admin_back)$"))
+        app.add_handler(CallbackQueryHandler(subscription_callback, pattern="^check_subscription$"))
+        app.add_handler(CallbackQueryHandler(referral_callback_handler, pattern="^(copy_referral_link|back_to_menu)$"))
+        app.add_handler(CallbackQueryHandler(promo_callback_handler, pattern="^(promo_|back_to_menu)$"))
+        app.add_handler(CallbackQueryHandler(admin_coin_callback_handler, pattern="^(add_|sub_|admin_back)$"))
         
-        application.add_handler(MessageHandler(filters.Regex("^👤 Profil$"), profile_handler))
-        application.add_handler(MessageHandler(filters.Regex("^🔗 Referral$"), referral_handler))
-        application.add_handler(MessageHandler(filters.Regex("^💰 Promo$"), promo_handler))
-        application.add_handler(MessageHandler(filters.Regex("^🏆 Reyting$"), rating_handler))
-        application.add_handler(MessageHandler(filters.Regex("^❓ Yordam$"), help_handler))
+        app.add_handler(MessageHandler(filters.Regex("^👤 Profil$"), profile_handler))
+        app.add_handler(MessageHandler(filters.Regex("^🔗 Referral$"), referral_handler))
+        app.add_handler(MessageHandler(filters.Regex("^💰 Promo$"), promo_handler))
+        app.add_handler(MessageHandler(filters.Regex("^🏆 Reyting$"), rating_handler))
+        app.add_handler(MessageHandler(filters.Regex("^❓ Yordam$"), help_handler))
         
-        application.add_handler(MessageHandler(filters.Regex("^👑 Admin$"), admin_panel_handler))
-        application.add_handler(MessageHandler(filters.Regex("^📊 Statistika$"), admin_stats_handler))
-        application.add_handler(MessageHandler(filters.Regex("^💰 Coin berish$"), admin_coin_handler))
-        application.add_handler(MessageHandler(filters.Regex("^📢 Xabar yuborish$"), admin_broadcast_handler))
-        application.add_handler(MessageHandler(filters.Regex("^👥 Foydalanuvchilar$"), admin_users_handler))
-        application.add_handler(MessageHandler(filters.Regex("^🔙 Asosiy menyu$"), back_handler))
+        app.add_handler(MessageHandler(filters.Regex("^👑 Admin$"), admin_panel_handler))
+        app.add_handler(MessageHandler(filters.Regex("^📊 Statistika$"), admin_stats_handler))
+        app.add_handler(MessageHandler(filters.Regex("^💰 Coin berish$"), admin_coin_handler))
+        app.add_handler(MessageHandler(filters.Regex("^📢 Xabar yuborish$"), admin_broadcast_handler))
+        app.add_handler(MessageHandler(filters.Regex("^👥 Foydalanuvchilar$"), admin_users_handler))
+        app.add_handler(MessageHandler(filters.Regex("^🔙 Asosiy menyu$"), back_handler))
         
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_broadcast_send))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown_handler))
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_broadcast_send))
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown_handler))
         
         logger.info("Bot started...")
-        await application.run_polling(allowed_updates=Update.ALL_TYPES)
+        app.run_polling(allowed_updates=Update.ALL_TYPES)
         
     except Exception as e:
-        logger.error(f"Error in main: {e}")
+        logger.error(f"Error: {e}")
         raise
-
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        logging.error(f"Botni ishga tushirishda xatolik: {e}")
