@@ -83,28 +83,31 @@ async def get_or_create_user(update: Update, context: CallbackContext) -> Option
     return get_user(user.id)
 
 
-async def check_subscription(user_id: int, context: CallbackContext) -> bool:
-    if not REQUIRED_CHANNELS:
-        return True
-    try:
-        for channel_name, channel_username in REQUIRED_CHANNELS.items():
-            channel_username = channel_username.replace('@', '')
-            try:
-                chat_member = await context.bot.get_chat_member(
-                    chat_id=f"@{channel_username}",
-                    user_id=user_id
-                )
-                if chat_member.status not in ['member', 'administrator', 'creator']:
-                    return False
-            except Exception as e:
-                logger.error(f"Error checking channel {channel_name}: {e}")
-                return False
-        return True
-    except Exception as e:
-        logger.error(f"Error in check_subscription: {e}")
-        return False
+# ... (Sizning kanallarni tekshiradigan kodlaringiz shu yerda turibdi) ...
 
+    # Tasavvur qilaylik, tekshiruv natijasi 'is_member' o'zgaruvchisida turibdi
+    if is_member:  # Agar foydalanuvchi hamma kanalga a'zo bo'lgan bo'lsa
+        # 1. Obuna bo'ling degan eski xabarni va tugmalarni butunlay o'chiramiz
+        try:
+            await context.bot.delete_message(
+                chat_id=update.callback_query.message.chat_id,
+                message_id=update.callback_query.message.message_id
+            )
+        except Exception:
+            pass  # Agar xabar allaqachon o'chirilgan bo'lsa, dastur to'xtab qolmasligi uchun
 
+        # 2. Foydalanuvchiga muvaffaqiyatli o'tganini aytamiz
+        await context.bot.send_message(
+            chat_id=update.callback_query.from_user.id,
+            text="✅ Rahmat! Hamma kanallarga obuna bo'ldingiz. Endi botdan foydalanishingiz mumkin!"
+        )
+        
+    else:  # Agar hali hamma kanalga obuna bo'lmagan bo'lsa
+        # 3. Eski xabar o'chmaydi, shunchaki ekran tepasida ogohlantirish chiqadi
+        await update.callback_query.answer(
+            text="❌ Siz hali hamma kanallarga obuna bo'lmagansiz! Iltimos, tekshirib qaytadan urinib ko'ring.",
+            show_alert=True  # Ekran o'rtasida ogohlantirish oynasini chiqaradi
+        )
 async def get_subscription_keyboard(user_id: int, context: CallbackContext):
     keyboard = []
     not_subscribed = []
