@@ -13,6 +13,16 @@ def get_main_keyboard():
     return ReplyKeyboardMarkup(buttons, resize_keyboard=True)
 
 
+def get_admin_keyboard():
+    """Admin tugmalar"""
+    buttons = [
+        [KeyboardButton("📊 Statistika"), KeyboardButton("💰 Coin berish")],
+        [KeyboardButton("📢 Xabar yuborish"), KeyboardButton("👥 Foydalanuvchilar")],
+        [KeyboardButton("🔙 Asosiy menyu")]
+    ]
+    return ReplyKeyboardMarkup(buttons, resize_keyboard=True)
+
+
 def get_back_keyboard():
     """Orqaga qaytish tugmasi"""
     buttons = [[KeyboardButton("🔙 Orqaga")]]
@@ -20,12 +30,11 @@ def get_back_keyboard():
 
 
 def get_promo_keyboard():
-    """Promo almashtirish tugmalari - InlineKeyboardButton ko'rinishida"""
+    """Promo almashtirish tugmalari"""
     from config import PROMO_PRICES
     
     keyboard = []
     
-    # Har bir promo uchun alohida tugma
     for promo_name in PROMO_PRICES.keys():
         keyboard.append([
             InlineKeyboardButton(
@@ -34,7 +43,6 @@ def get_promo_keyboard():
             )
         ])
     
-    # Orqaga tugmasi
     keyboard.append([
         InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")
     ])
@@ -43,7 +51,7 @@ def get_promo_keyboard():
 
 
 def get_referral_keyboard():
-    """Referral link uchun tugma - linkni nusxalash"""
+    """Referral link uchun tugma"""
     keyboard = [
         [InlineKeyboardButton("📋 Linkni nusxalash", callback_data="copy_referral_link")],
         [InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")]
@@ -52,8 +60,22 @@ def get_referral_keyboard():
 
 
 def get_referral_link_keyboard():
-    """Faqat referral linkni ko'rsatish uchun - orqaga tugmasi bilan"""
+    """Faqat referral linkni ko'rsatish uchun"""
     keyboard = [
         [InlineKeyboardButton("🔙 Orqaga", callback_data="back_to_menu")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_admin_coin_keyboard():
+    """Coin berish uchun tugmalar"""
+    keyboard = [
+        [InlineKeyboardButton("➕ 10 coin", callback_data="add_10")],
+        [InlineKeyboardButton("➕ 50 coin", callback_data="add_50")],
+        [InlineKeyboardButton("➕ 100 coin", callback_data="add_100")],
+        [InlineKeyboardButton("➖ 10 coin", callback_data="sub_10")],
+        [InlineKeyboardButton("➖ 50 coin", callback_data="sub_50")],
+        [InlineKeyboardButton("➖ 100 coin", callback_data="sub_100")],
+        [InlineKeyboardButton("🔙 Orqaga", callback_data="admin_back")]
     ]
     return InlineKeyboardMarkup(keyboard)
