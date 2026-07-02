@@ -3,6 +3,7 @@
 import logging
 import random
 import string
+import asyncio
 from typing import Optional
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -35,13 +36,11 @@ from buttons import (
     get_admin_coin_keyboard,
 )
 
-# 24/7 uchun keep_alive
 try:
     from keep_alive import keep_alive
 except ImportError:
     keep_alive = None
 
-# Logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -130,7 +129,6 @@ async def get_subscription_keyboard(user_id: int, context: CallbackContext):
     return InlineKeyboardMarkup(keyboard)
 
 
-# ============ START ============
 async def start_command(update: Update, context: CallbackContext):
     try:
         user = update.effective_user
@@ -212,7 +210,6 @@ async def subscription_callback(update: Update, context: CallbackContext):
             await query.edit_message_text(text, parse_mode="HTML", reply_markup=keyboard)
 
 
-# ============ PROFIL ============
 async def profile_handler(update: Update, context: CallbackContext):
     try:
         user_id = update.effective_user.id
@@ -241,7 +238,6 @@ async def profile_handler(update: Update, context: CallbackContext):
         await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
-# ============ REFERRAL ============
 async def referral_handler(update: Update, context: CallbackContext):
     try:
         user_id = update.effective_user.id
@@ -289,7 +285,6 @@ async def referral_callback_handler(update: Update, context: CallbackContext):
         )
 
 
-# ============ PROMO ============
 async def promo_handler(update: Update, context: CallbackContext):
     try:
         user_id = update.effective_user.id
@@ -363,7 +358,6 @@ async def promo_callback_handler(update: Update, context: CallbackContext):
         logger.info(f"User {user_id} exchanged {coins_needed} coins for {promo_name}")
 
 
-# ============ REYTING ============
 async def rating_handler(update: Update, context: CallbackContext):
     try:
         user_id = update.effective_user.id
@@ -405,7 +399,6 @@ async def rating_handler(update: Update, context: CallbackContext):
         await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
-# ============ YORDAM ============
 async def help_handler(update: Update, context: CallbackContext):
     try:
         help_text = "❓ <b>Yordam</b>\n\n📌 <b>Bot haqida:</b>\nBu bot referral tizimi orqali do'stlaringizni taklif qilish va coin yig'ish uchun.\n\n🔗 <b>Referral link:</b>\nDo'stingizni taklif qilish uchun Referral tugmasini bosing.\n\n💰 <b>Coin:</b>\nHar bir taklif qilgan do'stingiz uchun coin olasiz.\n\n💎 <b>Promo almashtirish:</b>\nPromo tugmasini bosing va kerakli promoni tanlang.\n\n📊 <b>Reyting:</b>\nEng ko'p referral va coin yig'gan foydalanuvchilarni ko'rsatadi.\n\n👤 <b>Profil:</b>\nO'zingizning statistikingizni ko'rish uchun."
@@ -420,7 +413,6 @@ async def help_handler(update: Update, context: CallbackContext):
         await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
-# ============ ORQAGA ============
 async def back_handler(update: Update, context: CallbackContext):
     try:
         user_id = update.effective_user.id
@@ -433,7 +425,6 @@ async def back_handler(update: Update, context: CallbackContext):
         await update.message.reply_text("❌ Xatolik yuz berdi.")
 
 
-# ============ ADMIN HANDLERS ============
 async def admin_panel_handler(update: Update, context: CallbackContext):
     try:
         user_id = update.effective_user.id
@@ -666,7 +657,7 @@ async def unknown_handler(update: Update, context: CallbackContext):
 
 
 # ============ MAIN ============
-def main():
+async def main():
     try:
         init_database()
         logger.info("Database initialized")
@@ -680,24 +671,20 @@ def main():
         
         application = Application.builder().token(BOT_TOKEN).build()
         
-        # Command handlers
         application.add_handler(CommandHandler("start", start_command))
         application.add_handler(CommandHandler("coin", admin_coin_command_handler))
         
-        # Callback query handlers
         application.add_handler(CallbackQueryHandler(subscription_callback, pattern="^check_subscription$"))
         application.add_handler(CallbackQueryHandler(referral_callback_handler, pattern="^(copy_referral_link|back_to_menu)$"))
         application.add_handler(CallbackQueryHandler(promo_callback_handler, pattern="^(promo_|back_to_menu)$"))
         application.add_handler(CallbackQueryHandler(admin_coin_callback_handler, pattern="^(add_|sub_|admin_back)$"))
         
-        # Message handlers
         application.add_handler(MessageHandler(filters.Regex("^👤 Profil$"), profile_handler))
         application.add_handler(MessageHandler(filters.Regex("^🔗 Referral$"), referral_handler))
         application.add_handler(MessageHandler(filters.Regex("^💰 Promo$"), promo_handler))
         application.add_handler(MessageHandler(filters.Regex("^🏆 Reyting$"), rating_handler))
         application.add_handler(MessageHandler(filters.Regex("^❓ Yordam$"), help_handler))
         
-        # Admin handlers
         application.add_handler(MessageHandler(filters.Regex("^👑 Admin$"), admin_panel_handler))
         application.add_handler(MessageHandler(filters.Regex("^📊 Statistika$"), admin_stats_handler))
         application.add_handler(MessageHandler(filters.Regex("^💰 Coin berish$"), admin_coin_handler))
@@ -705,14 +692,11 @@ def main():
         application.add_handler(MessageHandler(filters.Regex("^👥 Foydalanuvchilar$"), admin_users_handler))
         application.add_handler(MessageHandler(filters.Regex("^🔙 Asosiy menyu$"), back_handler))
         
-        # Broadcast handler
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_broadcast_send))
-        
-        # Unknown handler
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown_handler))
         
         logger.info("Bot started...")
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
+        await application.run_polling(allowed_updates=Update.ALL_TYPES)
         
     except Exception as e:
         logger.error(f"Error in main: {e}")
@@ -720,4 +704,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        logging.error(f"Botni ishga tushirishda xatolik: {e}")
