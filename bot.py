@@ -624,5 +624,16 @@ def main():
         raise
 
 
+import asyncio
+
 if __name__ == "__main__":
-    main()
+    try:
+        # Yangi event loop yaratamiz va uni tizimga bog'laymiz
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        # Botni ishga tushiramiz
+        loop.run_until_complete(main())
+    except Exception as e:
+        import logging
+        logging.error(f"Botni ishga tushirishda xatolik: {e}")
